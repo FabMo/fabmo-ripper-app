@@ -1,0 +1,15 @@
+{
+  "name": "Ripper",
+  "main": "./index.html",
+  "icon": "icon.png",
+  "icon_color": "#ffffff",
+  "version": "0.0.1",
+  "author": "Ryan Sturmer",
+  "website": "http://www.shopbottools.com",
+  "description": "Full size table ripper",
+  "id": "fabmo-ripper-app",
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-zip": "^0.17.1"
+  }
+}

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html style="overflow-y: auto;">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FabMo Ripper</title>
+    <link rel="stylesheet" href="css/bulma.min.css">
+    <script src="js/fabmo.js"></script>
+    <script src="js/ripper_ui.js"></script>
+    <script src="js/toolpath.js"></script>
+  </head>
+  <body>
+    <div style="margin: 10px;">
+    <div class="columns">
+
+      <div class="column is-three-quarters">
+          
+          <div style="text-align: center;"><img src="images/ripper-header.png"  style="max-height: 4em;" class="is-hidden-desktop is-hidden-tablet"></div>       
+        <div style="width: 100%;">
+          <canvas id="cvs" style="border:1px solid gray; margin: 10px; border-radius: 10px; box-shadow: 2px 2px 6px gray; visibility: hidden;"></canvas>
+        </div>
+      </div>
+
+      <div class="column">
+        <div>
+          <img src="images/ripper-header.png"  style="width: 100%" class="is-hidden-mobile">
+          <div class="field has-addons" style="margin-top: 10px;">
+            <p class="control">
+              <a class="button is-static is-large">X</a>
+            </p>
+            <p class="control" style="width: 100%">
+              <input id="txt-x-position" type="float" class="input is-large" placeholder="X Center">
+            </p>
+            <p class="control">
+              <button id="btn-x-use-current" class="button is-static is-large" tabindex="-1" style="pointer-events: initial;">
+                <span class="icon">
+                  <img src="images/crosshair.png" alt="" />
+                </span>
+              </button>
+            </p>
+          </div>
+
+          <div class="field has-addons" style="margin-top: 10px;">
+            <p class="control">
+              <a class="button is-static is-large">Y</a>
+            </p>
+            <p class="control" style="width: 100%">
+              <input id="txt-y-position" class="input is-large" placeholder="Y Center">
+            </p>
+            <p class="control">
+              <button id="btn-y-use-current" class="button is-static is-large" tabindex="-1" style="pointer-events: initial;">
+                <span class="icon">
+                  <img src="images/crosshair.png" alt="" />
+                </span>
+              </button>
+            </p>
+          </div>
+<!--          
+          <div class="field has-addons" style="margin-top: 10px;">
+            <p class="control">
+              <a class="button is-static is-large">
+                <span class="icon">
+                  <img src="images/thickness-icon.png" alt="" />
+                </span>
+              </a>
+            </p>
+            <p class="control" style="width: 100%">
+              <input id="txt-thickness" class="input is-large" placeholder="Material Thickness" value="0.5">
+            </p>
+          </div>
+    -->    
+
+          <button id="btn-rip" class="button is-dark is-large" style="width: 100%; margin-top: 10px;" disabled>
+            Rip!
+          </button>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+  </body>
+
+
+  <script type="text/javascript">
+    // Create link to dashboard, defer (UI will show when ready() is called)
+    var fabmo = new FabMoDashboard(defer=true);
+
+    // Actual machine position
+    var posx = 0.0
+    var posy = 0.0
+
+    // Update the local position on status report (and request one on startup so we've got the latest)
+    fabmo.on('status', function(status) {
+      posx = status.posx;
+      posy = status.posy;
+    });
+    fabmo.requestStatus();
+
+    // Load configuration first, and then do all the things
+    function onConfigLoaded(err, config) {
+      // Create the controller for the UI
+      var ripper = new TableRipperUI(document.getElementById('cvs'));
+        window.addEventListener('resize', function(evt) {
+        ripper.resize();
+      });
+
+      // Handle changes to the table UI
+      ripper.on('change', function(evt) {
+        document.getElementById('txt-x-position').value = evt.x.toFixed(3);
+        document.getElementById('txt-y-position').value = evt.y.toFixed(3);
+        if(evt.quads.length > 0) {
+          document.getElementById('btn-rip').disabled = false;
+        } else {
+          document.getElementById('btn-rip').disabled = true;        
+        }
+        if(!ripper.dragging) {
+            saveConfig();          
+        }
+      });
+
+      // Handle the button click to start the rip
+      document.getElementById('btn-rip').addEventListener('click', function(evt) {
+        sbp_code = createSBPCode({
+          x : ripper.x,
+          y : ripper.y,
+          w : ripper.w,
+          h : ripper.h, 
+          quads : ripper.quads
+        });
+        saveConfig();
+        fabmo.runSBP(sbp_code)
+      });
+
+      // Handle changes to the table by updating text fields 
+      function updateUI() {
+        var x = parseFloat(document.getElementById('txt-x-position').value);
+        var y = parseFloat(document.getElementById('txt-y-position').value);
+        if(x > 0 && x < ripper.w && y > 0 && y < ripper.w) {
+          ripper.setXY(x,y);
+        }
+      }
+      document.getElementById('txt-x-position').addEventListener('change', function(evt) { updateUI(); });
+      document.getElementById('txt-y-position').addEventListener('change', function(evt) { updateUI(); });
+
+      // Save the configuration back to the tool
+      function saveConfig() {
+        fabmo.setAppConfig( {
+          x : ripper.x,
+          y : ripper.y,
+          quads : ripper.getQuads()
+        });
+      }
+
+      // Load the ripper config if it is valid
+      try {
+        if(err) { console.error(err); }
+        else {
+          var config = config || {};
+          if('x' in config && 'y' in config) {
+            try { ripper.setXY(config.x, config.y); } catch(e) {};
+          }
+          if('quads' in config) {
+            try { ripper.setQuads(config.quads); } catch(e) {};
+          }
+        }
+      } catch(e) {
+        // Do nothing if it's not valid - a valid configuration will be sent the next time it needs to be updated.
+      }
+
+      // Setup the crosshair buttons for X/Y
+      document.getElementById('btn-x-use-current').addEventListener('click', function(evt) { 
+        ripper.setXY(posx, ripper.y); 
+      });
+
+      document.getElementById('btn-y-use-current').addEventListener('click', function(evt) { 
+        ripper.setXY(ripper.x, posy); 
+      });
+      
+      // Populate the text fields with the UI default X/Y
+      document.getElementById('txt-x-position').value = ripper.x.toFixed(3);
+      document.getElementById('txt-y-position').value = ripper.y.toFixed(3);
+
+      // Ready first, then resize (The viewport doesn't get sized until after ready() so we need to call ready first.)
+      fabmo.ready();
+      ripper.resize();
+
+      // Show the canvas once it's appropriately sized and drawn
+      document.getElementById('cvs').style.visibility = 'visible';
+    }
+
+    // Application start, essentially.
+    if(fabmo.isPresent()) {
+        fabmo.getAppConfig(onConfigLoaded); 
+    } else {
+        // Shim for debugging outside of dash.  Comment out in production
+        onConfigLoaded(null, {x : 20, y:20, quads: [1,3]});
+    }
+    
+  </script>
+</html>
