@@ -1,9 +1,17 @@
     function getMousePos(canvas, evt) {
       var rect = canvas.getBoundingClientRect();
-      return {
-        x: evt.clientX - rect.left,
-        y: evt.clientY - rect.top
-      };
+      if(evt.changedTouches) {
+        return {
+          x : evt.changedTouches[0].clientX - rect.left,
+          y : evt.changedTouches[0].clientY - rect.top,          
+        }
+      } else {
+        return {
+          x: evt.clientX - rect.left,
+          y: evt.clientY - rect.top
+        };
+
+      }
     }
 
     function TableRipperUI(element, options) {
@@ -17,6 +25,11 @@
       this.hilight_quadrant = 0;
       this.quads = new Set();
       this.dragCoordinates = null;
+      this.cvs.addEventListener('touchstart',this.onMouseDown.bind(this), false);
+      this.cvs.addEventListener('touchend',this.onMouseUp.bind(this), false);
+      this.cvs.addEventListener('touchcancel',this.onMouseUp.bind(this), false);
+      this.cvs.addEventListener('touchmove',this.onMouseMove.bind(this), false);
+
       this.cvs.addEventListener('mousedown',this.onMouseDown.bind(this), false);
       this.cvs.addEventListener('mouseup',this.onMouseUp.bind(this), false);
       this.cvs.addEventListener('mouseleave',this.onMouseLeave.bind(this), false);
@@ -58,7 +71,9 @@
     }
 
     TableRipperUI.prototype.onMouseUp = function(evt) {
+        this.hilight_quadrant = 0;
         this.stopDragging();
+        this.draw();
     }
     TableRipperUI.prototype.onMouseLeave = function(evt) {
       this.hilight_quadrant = 0;
@@ -83,7 +98,7 @@
         this.hilight_quadrant = 5;
         this.setXY(x,y)
       } else {
-        if(evt.buttons) {
+        if(evt.buttons || evt.changedTouches) {
           this.hilight_quadrant = 0;
         } else {
           this.hilight_quadrant = this.hitTest(mousePos);
