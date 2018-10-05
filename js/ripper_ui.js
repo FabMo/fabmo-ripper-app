@@ -37,6 +37,7 @@
       this.cvs.addEventListener('mouseup',this.onMouseUp.bind(this), false);
       this.cvs.addEventListener('mouseleave',this.onMouseLeave.bind(this), false);
       this.cvs.addEventListener('mousemove',this.onMouseMove.bind(this), false);
+     
       this.listeners = {
         'change' : []
       };
@@ -68,6 +69,7 @@
 
     /*
      * Size this element to match the dimensions of its parent, and redraw.
+     * TODO RESIZE ISSUE ON IPHONE
      */
     TableRipperUI.prototype.resize = function() {
       var w = (this.cvs.parentElement.offsetWidth)-20;
@@ -202,11 +204,14 @@
      */
     TableRipperUI.prototype.hitTest = function(mousePos) {
       var RADIUS = 20
+      
+      // Check for hit in the middle circle, return 5 if so.
       var d = Math.sqrt(Math.pow(mousePos.x - this.x*this.scale, 2) + Math.pow(mousePos.y - (this.h-this.y)*this.scale, 2))
       if(d < RADIUS) {
         return 5;
       } 
 
+      // Check for hit on the horizontal lines
       if(Math.abs(mousePos.x - this.x*this.scale) < RADIUS ) {
         if(mousePos.y < (this.h-this.y)*this.scale) {
           return 1;
@@ -214,6 +219,8 @@
           return 3;
         }
       }
+
+      // Check for hit on the vertical lines
       if(Math.abs(mousePos.y - (this.h-this.y)*this.scale) < RADIUS ) {
         if(mousePos.x < this.x*this.scale) {
           return 2;

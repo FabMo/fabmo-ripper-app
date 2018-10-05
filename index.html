@@ -98,7 +98,7 @@
     function onConfigLoaded(err, config) {
       // Create the controller for the UI
       var ripper = new TableRipperUI(document.getElementById('cvs'));
-        window.addEventListener('resize', function(evt) {
+      window.addEventListener('resize', function(evt) {
         ripper.resize();
       });
 
@@ -169,11 +169,13 @@
 
       // Setup the crosshair buttons for X/Y
       document.getElementById('btn-x-use-current').addEventListener('click', function(evt) { 
-        ripper.setXY(posx, ripper.y); 
+        ripper.setXY(posx, ripper.y);
+        ripper.setQuads([1,3]);
       });
 
       document.getElementById('btn-y-use-current').addEventListener('click', function(evt) { 
         ripper.setXY(ripper.x, posy); 
+        ripper.setQuads([2,4]);
       });
       
       // Populate the text fields with the UI default X/Y
