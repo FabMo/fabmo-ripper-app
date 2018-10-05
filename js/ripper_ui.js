@@ -24,6 +24,11 @@
       }
       this.x = this.w/2;
       this.y = this.h/2;
+      this.scale = 1.0;
+      // Position of the actual tool
+      this.toolx = null;
+      this.tooly = null;
+      
       this.aspect = this.h/this.w;
       this.hilight_quadrant = 0;
       this.quads = new Set();
@@ -110,6 +115,19 @@
       ctx.arc(this.scale*this.x, this.scale*(this.h-this.y), 10, 0, 2*Math.PI);
       ctx.stroke();
 
+      // Crosshair for the current tool position
+      if((this.toolx !== null) && (this.tooly !== null)) {
+        ctx.strokeStyle = 'black'
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        var crosshairSize = 10;
+        ctx.arc(this.scale*this.toolx, this.scale*(this.h-this.tooly), crosshairSize/2, 0, 2*Math.PI);
+        ctx.moveTo(this.scale*this.toolx-crosshairSize, this.scale*(this.h-this.tooly));
+        ctx.lineTo(this.scale*this.toolx+crosshairSize, this.scale*(this.h-this.tooly));
+        ctx.moveTo(this.scale*this.toolx, this.scale*(this.h-this.tooly)-crosshairSize);
+        ctx.lineTo(this.scale*this.toolx, this.scale*(this.h-this.tooly)+crosshairSize);
+        ctx.stroke();
+      }
       // Active cuts
       this.quads.forEach(function(quad) {
         this.drawQuadLine(ctx, quad, 'red', 2);
@@ -255,6 +273,12 @@
       this.draw();
     }
 
+    TableRipperUI.prototype.setToolXY = function(x,y) {
+      this.toolx = x;
+      this.tooly = y;
+      this.draw();
+    }
+
     /*
      * Set the quadrant lines that are selected. (1,2,3,4)  If omitted, the set of selected lines is cleared.
      */
@@ -348,6 +372,7 @@
           this.emit('change', {x:this.x,y:this.y, quads: Array.from(this.quads)});        
         }
     }
+
     TableRipperUI.prototype.emit = function(event_name, event) {
       this.listeners[event_name].forEach(function(listener) {
         listener(event);

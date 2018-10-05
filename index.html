@@ -84,13 +84,14 @@
     var fabmo = new FabMoDashboard(defer=true);
 
     // Actual machine position
-    var posx = 0.0
-    var posy = 0.0
+    var posx = 0
+    var posy = 0
 
     // Update the local position on status report (and request one on startup so we've got the latest)
     fabmo.on('status', function(status) {
       posx = status.posx;
       posy = status.posy;
+      ripper.setToolXY(posx,posy);
     });
     fabmo.requestStatus();
 
